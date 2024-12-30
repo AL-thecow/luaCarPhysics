@@ -12,17 +12,20 @@
  
  -- vector addition:
  function Vector.__add(a, b)
-   local x = a.m * math.cos(a.d) + b.m * math.cos(b.d)
-   local y = a.m * math.sin(a.d) + b.m * math.sin(b.d)
-   local newMagnitude = math.sqrt(x * x + y * y)
-   local newDirection = math.atan2(y,x)
-   return Vector.new(newMagnitude,newDirection)
+    if type(a) == "number" or type(b) == "number" then
+        error("cannot add scalar to vector")
+    end
+    local x = a:x() + b:x()
+    local y = a:y() + b:y()
+    local newMagnitude = math.sqrt(x * x + y * y)
+    local newDirection = math.atan2(y,x)
+    return Vector.new(newMagnitude,newDirection)
  end
  
  -- vector subtraction:
  function Vector.__sub(a, b)
-    local x = a.m * math.cos(a.d) - b.m * math.cos(b.d)
-    local y = a.m * math.sin(a.d) - b.m * math.sin(b.d)
+    local x = a:x() - b:x()
+    local y = a:y() - b:y()
     local newMagnitude = math.sqrt(x * x + y * y)
     local newDirection = math.atan2(y,x)
     return Vector.new(newMagnitude,newDirection)
@@ -66,6 +69,7 @@
     else
         a.d = a.d - math.pi
         return Vector.new(a.m,a.d - math.pi)
+    end
  end
  
  -- vector < comparison:
@@ -82,7 +86,20 @@
  function Vector.__tostring(v)
       return "(" .. v.m .. ", " .. v.d .. ")"
  end
-function checkKeys()
+
+ function Vector:x ()
+    return self.m * math.cos(self.d)
+ end
+ 
+ function Vector:y ()
+    return self.m * math.sin(self.d)
+ end
+
+ function Vector:u ()
+    return Vector.new(1,self.d)
+ end
+ 
+ function checkKeys()
 
     if love.keyboard.isDown("up")  or love.keyboard.isDown("w")then
         keys.up = true
@@ -142,6 +159,9 @@ function wallCollision()
 end
 
 function abs(input)
+    if type(input) ~= "number" then
+        error("cannot use absolute function on non-numbers")
+    end
     if input < 0 then
         return input * -1
     end
@@ -164,12 +184,11 @@ function updatePedal()
     pedal.innerWidth = player.steerAngle * pedal.maxWidth / maxSteerAngle 
 end
 
-function mapMouseToSteerAngle(dt, currentAngle)--angles are in radians
+function mapMouseToSteerAngle()--angles are in radians
     player.steerAngle = (mouseX - pedal.x) * 0.2 * math.pi / 180
     if abs(player.steerAngle) > maxSteerAngle then
         player.steerAngle = maxSteerAngle * player.steerAngle / abs(player.steerAngle)
     end
-    
 end
 
 function mapKeystoAcceleration()
@@ -191,43 +210,38 @@ function printVectors(x,y)
     love.graphics.line(x,y,x + scale * player.forceCentripetal.x / player.mass, y + scale * player.forceCentripetal.y/player.mass)
 end
 
-function updateNetForce()
-    player.forceNet = player.forceApplied + player.forceCentripetal + player.forceFriction
+function updateNetForce(target)
+    return target.forceApplied + target.forceCentripetal + target.forceFriction
 end
 
-function updateForceApplied(accel,angle)
-    player.forceApplied.x = accel * math.cos(angle) * player.mass
-    player.forceApplied.y = accel * math.sin(angle) * player.mass
+function updateForceApplied(target)
+    local magnitude = target.accel * target.mass
+    local direction = target.steerAngle + target.direction
+    return Vector.new(magnitude,direction)
 end
 
-function updateForceFriction(magnitudeOfVelocity)
-    if abs(magnitudeOfVelocity) * scale > 0 and player.accel == 0 then
-        player.forceFriction = -player.v * player.forceNormal / magnitudeOfVelocity
+function updateForceFriction(target)
+    if abs(target.v.m) * scale > 0 and target.accel == 0 then
+        return (- target.v:u()) * target.forceNormal
     else
-        player.forceFriction = player.forceFriction * 0
+        return (- target.v:u()) * 0
     end
-    --[[if abs(magnitudeOfVelocity) * scale < 1 then 
-        player.forceFriction = player.forceFriction / player.forceNormal
-    end
-    if magnitudeOfVelocity == 0 then
-        player.forceFriction = player.forceFriction * 0
-    end]]
 end
 
-function updateForceCentripetal(magnitudeOfVelocity)
-    if player.steerAngle == 0 then
-        return 0
+function updateForceCentripetal(target)
+    if target.steerAngle == 0 then
+        return Vector.new(0,target.steerAngle)
     end
-    local radius = player.wheelbase / math.sin(player.steerAngle)
-    local forceMagnitude = player.mass * magnitudeOfVelocity * magnitudeOfVelocity / abs(radius)
-    local forceAngle = player.direction + player.steerAngle + math.pi/2 * player.steerAngle / abs(player.steerAngle)
-    local newForce = Vector.new(math.cos(forceAngle),math.sin(forceAngle))
-    player.forceCentripetal =  newForce * forceMagnitude
+    local radius = target.wheelbase / math.sin(target.steerAngle)
+    local forceMagnitude = target.mass * target.v.m * target.v.m / abs(radius)
+    local forceAngle = target.direction + target.steerAngle + math.pi/2 * target.steerAngle / abs(target.steerAngle)
+    local newForce = Vector.new(forceMagnitude,forceAngle)
+    return newForce 
 end
 
-function carDirection(velocityVector,magnitudeOfVelocity, currentDirection)
+function carDirection(target)
     
-    if magnitudeOfVelocity == 0 then
+    --[[if magnitudeOfVelocity == 0 then
         return currentDirection
     end
 
@@ -238,29 +252,29 @@ function carDirection(velocityVector,magnitudeOfVelocity, currentDirection)
         return newDirection - math.pi
     else
         return newDirection
-    end
-
+    end]]
+    return target.v.d
     
 end
 
 function updatePlayer(dt)
 
-    local magnitudeOfVelocity = math.sqrt(player.v.x * player.v.x + player.v.y * player.v.y)
+    --local magnitudeOfVelocity = math.sqrt(player.v.x * player.v.x + player.v.y * player.v.y)
     mapMouseToSteerAngle()
     mapKeystoAcceleration()
-    updateForceApplied(player.accel,player.steerAngle + player.direction)
-    updateForceFriction(magnitudeOfVelocity)
-    updateForceCentripetal(magnitudeOfVelocity)
-    updateNetForce()
-    if magnitudeOfVelocity == 0 then
+    player.forceApplied = updateForceApplied(player)
+    player.forceFriction = updateForceFriction(player)
+    player.forceCentripetal = updateForceCentripetal(player)
+    player.forceNet = updateNetForce(player)
+    --if magnitudeOfVelocity == 0 then
         --player.direction = player.direction
-    else
+    --else
         --player.direction = math.atan(player.v.y/player.v.x)
-        player.direction = carDirection(player.v, magnitudeOfVelocity, player.direction)
-    end
+    player.direction = carDirection(player)
+    --end
     player.v = player.v + player.forceNet * dt / player.mass
-    player.x = (player.x + player.v.x * dt * scale)
-    player.y = (player.y + player.v.y * dt * scale) 
+    player.x = (player.x + player.v:x() * dt * scale)
+    player.y = (player.y + player.v:y() * dt * scale) 
 end
 function love.load()
     w = 1000
@@ -337,7 +351,7 @@ function love.draw()
             love.graphics.rectangle("fill",-tireHeight/2,- tireWidth/2,tireHeight,tireWidth)
         love.graphics.pop()
     love.graphics.pop()
-    printVectors(player.x,player.y)
+    --printVectors(player.x,player.y)
     drawPedal()
     
 end
