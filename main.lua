@@ -4,28 +4,36 @@
  Vector.__index = Vector
  
  -- vector constructor:
- function Vector.new(x, y)
-   local v = {x = x or 0, y = y or 0}
+ function Vector.new(m, d)--magnitude and direction
+   local v = {m = m or 0, d = d or 0}
    setmetatable(v, Vector)
    return v
  end
  
  -- vector addition:
  function Vector.__add(a, b)
-   return Vector.new(a.x + b.x, a.y + b.y)
+   local x = a.m * math.cos(a.d) + b.m * math.cos(b.d)
+   local y = a.m * math.sin(a.d) + b.m * math.sin(b.d)
+   local newMagnitude = math.sqrt(x * x + y * y)
+   local newDirection = math.atan2(y,x)
+   return Vector.new(newMagnitude,newDirection)
  end
  
  -- vector subtraction:
  function Vector.__sub(a, b)
-   return Vector.new(a.x - b.x, a.y - b.y)
+    local x = a.m * math.cos(a.d) - b.m * math.cos(b.d)
+    local y = a.m * math.sin(a.d) - b.m * math.sin(b.d)
+    local newMagnitude = math.sqrt(x * x + y * y)
+    local newDirection = math.atan2(y,x)
+    return Vector.new(newMagnitude,newDirection)
  end
  
  -- multiplication of a vector by a scalar:
  function Vector.__mul(a, b)
    if type(a) == "number" then
-     return Vector.new(b.x * a, b.y * a)
+     return Vector.new(b.m * a, b.d)
    elseif type(b) == "number" then
-     return Vector.new(a.x * b, a.y * b)
+     return Vector.new(a.m * b, a.d)
    else
      error("Can only multiply vector by scalar.")
    end
@@ -34,7 +42,7 @@
  -- dividing a vector by a scalar:
  function Vector.__div(a, b)
     if type(b) == "number" then
-       return Vector.new(a.x / b, a.y / b)
+       return Vector.new(a.m / b,a.d)
     else
        error("Invalid argument types for vector division.")
     end
@@ -42,7 +50,7 @@
  
  -- vector equivalence comparison:
  function Vector.__eq(a, b)
-     return a.x == b.x and a.y == b.y
+     return a.m == b.m and a.d == b.d
  end
  
  -- vector not equivalence comparison:
@@ -52,22 +60,27 @@
  
  -- unary negation operator:
  function Vector.__unm(a)
-     return Vector.new(-a.x, -a.y)
+     --return Vector.new(-a.x, -a.y)
+    if a.d < math.pi then
+        return Vector.new(a.m,a.d + math.pi)
+    else
+        a.d = a.d - math.pi
+        return Vector.new(a.m,a.d - math.pi)
  end
  
  -- vector < comparison:
  function Vector.__lt(a, b)
-      return a.x < b.x and a.y < b.y
+      error("cannot compare vectors")
  end
  
  -- vector <= comparison:
  function Vector.__le(a, b)
-      return a.x <= b.x and a.y <= b.y
+      error("cannot compare vectors")
  end
  
  -- vector value string output:
  function Vector.__tostring(v)
-      return "(" .. v.x .. ", " .. v.y .. ")"
+      return "(" .. v.m .. ", " .. v.d .. ")"
  end
 function checkKeys()
 
