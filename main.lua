@@ -239,6 +239,7 @@ function updateForceCentripetal(target)
     return newForce 
 end
 
+
 function carDirection(target)
     
     --[[if magnitudeOfVelocity == 0 then
