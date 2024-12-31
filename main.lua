@@ -203,11 +203,11 @@ end
 
 function printVectors(x,y)
     love.graphics.setColor(love.math.colorFromBytes(129, 252, 170))
-    love.graphics.line(x,y,x + player.v.x * scale,y + player.v.y * scale)
+    love.graphics.line(x,y,x + player.v:x() * scale,y + player.v:y() * scale)
     love.graphics.setColor(love.math.colorFromBytes(240, 238, 146))
-    love.graphics.line(x,y,x + scale * player.forceApplied.x / player.mass, y + scale * player.forceApplied.y/player.mass )
-    love.graphics.line(x,y,x + scale * player.forceFriction.x / player.mass, y + scale * player.forceFriction.y/player.mass )
-    love.graphics.line(x,y,x + scale * player.forceCentripetal.x / player.mass, y + scale * player.forceCentripetal.y/player.mass)
+    love.graphics.line(x,y,x + scale * player.forceApplied:x() / player.mass, y + scale * player.forceApplied:y()/player.mass )
+    love.graphics.line(x,y,x + scale * player.forceFriction:x() / player.mass, y + scale * player.forceFriction:y()/player.mass )
+    love.graphics.line(x,y,x + scale * player.forceCentripetal:x() / player.mass, y + scale * player.forceCentripetal:y()/player.mass)
 end
 
 function updateNetForce(target)
@@ -216,7 +216,7 @@ end
 
 function updateForceApplied(target)
     local magnitude = target.accel * target.mass
-    local direction = target.steerAngle + target.direction
+    local direction = target.direction
     return Vector.new(magnitude,direction)
 end
 
@@ -254,6 +254,7 @@ function carDirection(target)
     else
         return newDirection
     end]]
+    
     return target.v.d
     
 end
@@ -352,7 +353,7 @@ function love.draw()
             love.graphics.rectangle("fill",-tireHeight/2,- tireWidth/2,tireHeight,tireWidth)
         love.graphics.pop()
     love.graphics.pop()
-    --printVectors(player.x,player.y)
+    printVectors(player.x,player.y)
     drawPedal()
     
 end
