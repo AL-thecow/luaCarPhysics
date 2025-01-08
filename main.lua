@@ -217,7 +217,7 @@ end
 
 function updateForceApplied(target)--rear wheel drive
     local magnitude = target.accel * target.mass
-    local direction = target.direction --+ target.steerAngle
+    local direction = target.direction + target.steerAngle
     return Vector.new(magnitude,direction)
 end
 
@@ -241,17 +241,18 @@ function updateForceCentripetal(target,dt)
 
     --player.angularVelocity = player.v.m / radius
     --player.newDirection = player.newDirection + player.angularVelocity * dt
-
-    local d = math.sqrt((target.wheelbase ^ 2)/math.tan(target.steerAngle) ^ 2 + target.rear.longitudinalOffset ^ 2)
+    target.angularVelocity = target.v.m / radius
+    local d = target.wheelbase / math.tan(target.steerAngle)
+    --local d = math.sqrt((target.wheelbase ^ 2)/math.tan(target.steerAngle) ^ 2 + target.rear.longitudinalOffset ^ 2)
     target.yawRate = target.v.m / d
     return newForce 
 end
 
-function carDirection(target)
-    direction = math.atan2((target.front.y - target.rear.y),(target.front.x - target.rear.x))
-    target.rear.direction = direction
-    target.front.direction = direction
-    return target.v.d
+function carDirection(target,dt)
+    --direction = math.atan2((target.front.y - target.rear.y),(target.front.x - target.rear.x))
+    --target.rear.direction = direction
+    --target.front.direction = direction
+    return target.direction + target.yawRate * dt
 end
 
 function updateTires(target,dt)
@@ -293,42 +294,43 @@ function tire.new(typeTire,x,y)
     end
     return t
 end 
+--tires
 
-function tire:update(direction,yawRate,force,mass,dt)
-    self.direction = direction
-    self.yawRate = yawRate
-    self.lonForce = force
-    self.load = mass
-    self:updateSlipAngle()
-    self:updateLateralForce()
-    self.netForce = self.lonForce + self.latForce
-    self.netForce.d = self.netForce.d + self.direction
-    self.v = self.v + self.netForce/1000 * dt
-    self.x = self.x + self.v:x() * dt --* scale
-    self.y = self.y + self.v:y() * dt --* scale 
-end
+    function tire:update(direction,yawRate,force,mass,dt)
+        self.direction = direction
+        self.yawRate = yawRate
+        self.lonForce = force
+        self.load = mass
+        self:updateSlipAngle()
+        self:updateLateralForce()
+        self.netForce = self.lonForce + self.latForce
+        self.netForce.d = self.netForce.d + self.direction
+        self.v = self.v + self.netForce/1000 * dt
+        self.x = self.x + self.v:x() * dt --* scale
+        self.y = self.y + self.v:y() * dt --* scale 
+    end
 
-function tire:updateSlipAngle()--
-    local term1 = self.v:y() - self.longitudinalOffset * self.yawRate
-    local term2 = self.v:x() - self.lateralOffset * self.yawRate
-end
+    function tire:updateSlipAngle()--
+        local term1 = self.v:y() - self.longitudinalOffset * self.yawRate
+        local term2 = self.v:x() - self.lateralOffset * self.yawRate
+    end
 
-function tire:updateLateralForce()-- F(s) = D sin(C * atan(B(1-E)s + E * atan(Bs)))
-    local magnitude = self.D * math.sin(self.C * math.atan(self.B * (1 - self.E) * self.slipAngle + self.E * math.atan(self.B * self.slipAngle)))
-    local direction = self.direction + self.steerAngle + math.pi/2 * self.steerAngle / abs(self.steerAngle)
-    local forceLateral = Vector.new(magnitude,direction)
-    self.latForce = forceLateral
-end
+    function tire:updateLateralForce()-- F(s) = D sin(C * atan(B(1-E)s + E * atan(Bs)))
+        local magnitude = self.D * math.sin(self.C * math.atan(self.B * (1 - self.E) * self.slipAngle + self.E * math.atan(self.B * self.slipAngle)))
+        local direction = self.direction + self.steerAngle + math.pi/2 * self.steerAngle / abs(self.steerAngle)
+        local forceLateral = Vector.new(magnitude,direction)
+        self.latForce = forceLateral
+    end
 
-function tire:draw()
-    love.graphics.setColor(love.math.colorFromBytes(129, 252, 170))
-    love.graphics.push()
-    love.graphics.translate(self.x,self.y)
-    love.graphics.rotate(self.direction)
-    love.graphics.rectangle("fill",-tireHeight/2,-player.width/2 - tireWidth/2,tireHeight,tireWidth)
-    love.graphics.rectangle("fill",-tireHeight/2,player.width/2 - tireWidth/2,tireHeight, tireWidth)
-    love.graphics.pop()
-end
+    function tire:draw()
+        love.graphics.setColor(love.math.colorFromBytes(129, 252, 170))
+        love.graphics.push()
+        love.graphics.translate(self.x,self.y)
+        love.graphics.rotate(self.direction)
+        love.graphics.rectangle("fill",-tireHeight/2,-player.width/2 - tireWidth/2,tireHeight,tireWidth)
+        love.graphics.rectangle("fill",-tireHeight/2,player.width/2 - tireWidth/2,tireHeight, tireWidth)
+        love.graphics.pop()
+    end
 
 function updatePlayer(dt)
 
@@ -344,7 +346,7 @@ function updatePlayer(dt)
         --player.direction = player.direction
     --else
         --player.direction = math.atan(player.v.y/player.v.x)
-    player.direction = carDirection(player)
+    player.direction = carDirection(player,dt)
     --end
     player.v = player.v + player.forceNet * dt / player.mass
     player.x = (player.x + player.v:x() * dt * scale)
@@ -365,12 +367,13 @@ function love.load()
     player.mass = 2000
     player.width = 40
     player.height = 60
+    player.inertia = player.mass * (player.width ^ 2 + player.height ^ 2) / 12
     player.wheelbase = 3
     player.yawRate = 0
     player.angularVelocity = 0
     player.steerAngle = 0
     player.direction = 0
-    player.newDirection = 0
+    player.angularAcceleration = 0
     player.accel = 0
     player.v = Vector.new(0,0)
     player.forceNet = Vector.new(0,0)
