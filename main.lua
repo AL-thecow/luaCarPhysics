@@ -1,6 +1,6 @@
 w = 1000
 h = 750
-scale = 20  --pixels per meter
+scale = 10  --pixels per meter
 require ("constants")
 require ("draw")
 require ("player")
@@ -10,9 +10,9 @@ require ("player")
 
 function mapKeystoAcceleration()
     if keys.up then
-        player.accel = 2
+        player.accel = 4
     elseif keys.down then 
-        player.accel = -2
+        player.accel = -4
     else
         player.accel = 0
     end
@@ -81,6 +81,7 @@ function love.draw()
         love.graphics.pop()
     love.graphics.pop()
     printVectors(player.x,player.y)
+    printStats(10,10)
     drawPedal()
     
 end

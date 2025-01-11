@@ -174,3 +174,13 @@ function abs(input)
     end
     return input
 end
+
+function sign(input)
+    if type(input) ~= "number" then
+        error("not a number in sign function")
+    end
+    if input == 0 then
+        return 1
+    end
+    return abs(input) / input
+end

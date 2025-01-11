@@ -15,15 +15,17 @@ player.direction = 0
 player.newDirection = 0
 player.accel = 0
 player.v = Vector.new(0,0)
-player.vLateral = Vector.new(0,0)
-player.vLongitudinal = Vector.new(0,0)
+player.fLateral = Vector.new(0,0)
+player.fLongitudinal = Vector.new(0,0)
 player.forceNet = Vector.new(0,0)
-player.forceApplied = Vector.new(0,0)
 player.forceFriction = Vector.new(0,0)
 player.forceCentripetal = Vector.new(0,0)
 player.forceNormal = player.mass * 9.81 * .05
 player.lateralOffset = 1
 player.longitudinalOffset = 1.5
+player.aV = 0
+player.term1 = 0
+player.term2 = 0
 
 function player:updatePlayer(dt)
 
@@ -31,30 +33,31 @@ function player:updatePlayer(dt)
     
     mapMouseToSteerAngle()
     mapKeystoAcceleration()
-    self:updateForceApplied(dt)
-    self:updateForceFriction()
-    self:updateForceCentripetal()
-    self:updateNetForce()
+    self:updateLongitudinalForce(dt)
+    self:updateCentripetalForce(dt)
     self:updateLateralForce()
+    self:updateForceFriction()
+    --self:updateForceCentripetal()
+    self:updateNetForce()
+    
     
     self:carDirection(dt)
-    
+    self:updatePosition(dt)
+end
+
+function player:updatePosition(dt)
     self.v = self.v + self.forceNet * dt / self.mass
     self.x = (self.x + self.v:x() * dt * scale)
     self.y = (self.y + self.v:y() * dt * scale) 
 end
 
-function player:updateNetForce()
-    self.forceNet = self.forceApplied + self.forceCentripetal + self.forceFriction
+function player:updateNetForce() 
+    self.forceNet = self.fLongitudinal + self.forceCentripetal --+ self.fLateral
+
+    
 end
 
-function player:updateForceApplied(dt)
-    local magnitude = self.accel * self.mass
-    local direction = self.direction --+ target.steerAngle
-    local newForce =  Vector.new(magnitude,direction)
-    self.vLongitudinal = player.vLongitudinal + newForce * dt
-    self.forceApplied = newForce
-end
+
 
 function player:updateForceFriction()
     if abs(self.v.m) * scale > 0 and self.accel == 0 then
@@ -62,48 +65,53 @@ function player:updateForceFriction()
     else
         self.forceFriction = (- self.v:u()) * 0
     end
-    
-end
-
-function player:updateForceCentripetal()
-    if self.steerAngle == 0 then
-        return Vector.new(0,self.steerAngle)
-    end
-    local radius = self.wheelbase / math.sin(self.steerAngle)
-    local forceMagnitude = self.mass * self.v.m * self.v.m / abs(radius)
-    local forceAngle = self.direction + self.steerAngle + math.pi/2 * self.steerAngle / abs(self.steerAngle)
-    local newForce = Vector.new(forceMagnitude,forceAngle)
-
-    local l = self.wheelbase/2
-    local r = radius
-    local s = 90 - self.steerAngle
-    local m = math.sqrt(l ^ 2 + r ^ 2 - 2 * l * r * math.cos(s))
-    self.yawRate = self.vLongitudinal / m
-    self.forceCentripetal = newForce 
 end
 
 
 function player:carDirection(dt)
-    self.angularVelocity = self.angularVelocity + self.angularAcceleration * dt
-    self.newDirection = self.direction + self.angularVelocity * dt
+    --self.angularVelocity = self.angularVelocity + self.angularAcceleration * dt
+    --self.direction = self.direction + self.angularVelocity * dt
 
-    self.direction = self.v.d
+    --self.direction = self.direction + self.aV * dt
     
+    self.direction = self.v.d
 end
+
+function player:updateLongitudinalForce(dt)
+    self.fLongitudinal.d = self.direction
+    self.fLongitudinal.m = self.accel * self.mass  
+end
+
+function player:updateCentripetalForce(dt)
+    if steerAngle == 0 then
+        --return 0
+    end
+    local radiusFront = self.wheelbase / math.sin(self.steerAngle)
+    --[[local hB = self.wheelbase / 2
+    local theta = math.pi/2 - abs(self.steerAngle)
+    local inputToSqrt = hB ^ 2 + radiusFront ^ 2 - 2 * hB * radiusFront * math.cos(theta)
+    if inputToSqrt < 0 then
+        error("negative in sqrt")
+    end
+    local realRadius = math.sqrt(inputToSqrt)]]
+    local magnitude = self.mass * self.v.m * self.v.m / radiusFront
+    self.aV = self.v.m / radiusFront
+    self.forceCentripetal.m = magnitude
+    self.forceCentripetal.d = self.direction + self.steerAngle + math.pi/2
+end -- a2 = root(b2 + c2 - 2bcCosA), A = 90 - steerAngle, b = hB, c = radiusFront
 
 function player:updateLateralForce()
     local directionVector = Vector.new(1,self.direction)
-    local term1 = math.acos(dot(self.v,directionVector) / self.v.m) -- front
+    self.term2 = math.acos(dot(self.v,directionVector) / self.v.m) * 180 / math.pi -- front
     directionVector.d = directionVector.d + self.steerAngle
-    local term2 = math.acos(dot(self.v,directionVector) / self.v.m) -- back
+    self.term1 = math.acos(dot(self.v,directionVector) / self.v.m) * 180 / math.pi -- back
 
-    local frontLat = getSlipForceCurve(term1)
-    local backLat = getSlipForceCurve(term2)
-    local corneringForce = frontLat + backLat
+    local frontLat = Vector.new(getSlipForceCurve(self.term1),self.direction + self.steerAngle + math.pi/2)
+    local backLat = Vector.new(getSlipForceCurve(self.term2),self.direction + math.pi/2)
+    self.fLateral = frontLat + backLat
 
-    self.torque = frontLat * math.cos(self.steerAngle) * self.wheelbase * 0.5 - backLat * self.wheelbase * 0.5
+    self.torque = frontLat.m * math.cos(self.steerAngle) * self.wheelbase * 0.5 - backLat.m * self.wheelbase * 0.5
     self.angularAcceleration = self.torque / self.inertia
-    self.vLongitudinal = self.v - self.vLateral
 end
 
 function getSlipForceCurve(slipAngle)
