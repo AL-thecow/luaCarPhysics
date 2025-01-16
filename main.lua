@@ -1,27 +1,22 @@
 w = 1000
 h = 750
-scale = 10  --pixels per meter
+scale = 5  --pixels per meter
 require ("constants")
-require ("draw")
 require ("player")
+require ("draw")
 
 
 
 
 function mapKeystoAcceleration()
     if keys.up then
-        player.accel = 4
+        player.accel = 8
     elseif keys.down then 
-        player.accel = -4
+        player.accel = -8
     else
         player.accel = 0
     end
 end
-
-
-
-
-
 
 function love.load()
     

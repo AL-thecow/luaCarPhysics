@@ -105,6 +105,26 @@
     end
     return a:x() * b:x() + a:y() * b:y()
  end
+
+ function unit(a)
+    local b = Vector.new(1,a.d)
+    return b
+ end
+
+ function normalize(a)
+    if type(a) == "number" or type(a) == "string" then
+        error("invalid input to normalize function")
+    end
+    local i = math.floor(a.d / (2 * math.pi))
+    local b = Vector.new(a.m,a.d)
+    if b.d < 0 then
+        b.d = b.d - math.pi * 2 * i
+        b.d = math.pi * 2 + b.d
+    else 
+        b.d = b.d - math.pi * 2 * i
+    end
+    return b
+ end
  
  function checkKeys()
 
@@ -179,8 +199,13 @@ function sign(input)
     if type(input) ~= "number" then
         error("not a number in sign function")
     end
+    
     if input == 0 then
+        return 0
+    else if input < 0 then
+        return -1
+    else
         return 1
     end
-    return abs(input) / input
+end
 end

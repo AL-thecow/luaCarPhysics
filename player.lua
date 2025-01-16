@@ -20,12 +20,14 @@ player.fLongitudinal = Vector.new(0,0)
 player.forceNet = Vector.new(0,0)
 player.forceFriction = Vector.new(0,0)
 player.forceCentripetal = Vector.new(0,0)
-player.forceNormal = player.mass * 9.81 * .05
+player.forceNormal = player.mass * 9.81 * .2
+player.downforce = player.mass * 9.81
+player.forceDrag = Vector.new(0,0)
 player.lateralOffset = 1
 player.longitudinalOffset = 1.5
 player.aV = 0
-player.term1 = 0
-player.term2 = 0
+player.frontSlip = 0
+player.backSlip = 0
 
 function player:updatePlayer(dt)
 
@@ -37,7 +39,7 @@ function player:updatePlayer(dt)
     self:updateCentripetalForce(dt)
     self:updateLateralForce()
     self:updateForceFriction()
-    --self:updateForceCentripetal()
+    --self:updateDragForce()
     self:updateNetForce()
     
     
@@ -52,29 +54,28 @@ function player:updatePosition(dt)
 end
 
 function player:updateNetForce() 
-    self.forceNet = self.fLongitudinal + self.forceCentripetal --+ self.fLateral
-
-    
+    self.forceNet = self.fLongitudinal + self.fLateral + self.forceFriction --+ self.forceCentripetal --+ self.fLateral
+    if keys.left then
+    self.forceNet = self.fLongitudinal 
+    end
 end
 
-
-
 function player:updateForceFriction()
-    if abs(self.v.m) * scale > 0 and self.accel == 0 then
+    --if abs(self.v.m) * scale > 0 and self.accel == 0 then
         self.forceFriction = (- self.v:u()) * self.forceNormal
-    else
-        self.forceFriction = (- self.v:u()) * 0
-    end
+   -- else
+       -- self.forceFriction = (- self.v:u()) * 0
+    --end
 end
 
 
 function player:carDirection(dt)
-    --self.angularVelocity = self.angularVelocity + self.angularAcceleration * dt
-    --self.direction = self.direction + self.angularVelocity * dt
+    self.angularVelocity = self.angularVelocity + self.angularAcceleration * dt
+    self.direction = self.direction + self.angularVelocity * dt
 
-    --self.direction = self.direction + self.aV * dt
+    self.direction = self.direction + self.aV * dt
     
-    self.direction = self.v.d
+    --self.direction = self.v.d
 end
 
 function player:updateLongitudinalForce(dt)
@@ -100,22 +101,31 @@ function player:updateCentripetalForce(dt)
     self.forceCentripetal.d = self.direction + self.steerAngle + math.pi/2
 end -- a2 = root(b2 + c2 - 2bcCosA), A = 90 - steerAngle, b = hB, c = radiusFront
 
-function player:updateLateralForce()
-    local directionVector = Vector.new(1,self.direction)
-    self.term2 = math.acos(dot(self.v,directionVector) / self.v.m) * 180 / math.pi -- front
-    directionVector.d = directionVector.d + self.steerAngle
-    self.term1 = math.acos(dot(self.v,directionVector) / self.v.m) * 180 / math.pi -- back
+function player:updateDragForce()
+    local fDrag = self.v.m ^ 2 * (- unit(self.v))
+    self.forceDrag = fdrag
+end
 
-    local frontLat = Vector.new(getSlipForceCurve(self.term1),self.direction + self.steerAngle + math.pi/2)
-    local backLat = Vector.new(getSlipForceCurve(self.term2),self.direction + math.pi/2)
+function player:updateLateralForce()
+    player:slipAngle()
+
+    local frontLat = Vector.new(getSlipForceCurve(self.frontSlip,player.downforce * 0.5),self.direction + self.steerAngle - math.pi/2 )--* sign(self.frontSlip)
+    local backLat = Vector.new(getSlipForceCurve(self.backSlip,player.downforce * 0.5),self.direction - math.pi/2 ) --* sign(self.backSlip)
     self.fLateral = frontLat + backLat
 
     self.torque = frontLat.m * math.cos(self.steerAngle) * self.wheelbase * 0.5 - backLat.m * self.wheelbase * 0.5
     self.angularAcceleration = self.torque / self.inertia
 end
 
-function getSlipForceCurve(slipAngle)
-    local B, C, D, E = -0.3, 2.5, 5000, 1
-    local magnitude = D * math.sin(C * math.atan(B * (1 - E) * slipAngle + E * math.atan(B * slipAngle)))
+function player:slipAngle()
+    local directionVector = Vector.new(1,self.v.d - self.direction)  
+    self.backSlip = math.atan(directionVector:y()/abs(directionVector:x())) * 180 / math.pi
+    directionVector.d = directionVector.d + self.steerAngle
+    self.frontSlip = math.atan(directionVector:y()/abs(directionVector:x())) * 180 / math.pi
+end
+
+function getSlipForceCurve(slipAngle,downForce)
+    local B, C, D, E = 0.6, 1.4, 1.1, -1.2
+    local magnitude = downForce * D * math.sin(C * math.atan(B * (1 - E) * slipAngle + E * math.atan(B * slipAngle)))
     return magnitude
 end
