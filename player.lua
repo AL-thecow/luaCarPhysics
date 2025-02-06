@@ -2,8 +2,8 @@ player = {}
 player.x = w/2--initial position
 player.y = h/2--initial position
 player.mass = 1000
-player.width = 40
-player.height = 60
+player.width = 2 * scale
+player.height = 3 * scale
 player.inertia = player.mass * (player.width ^ 2 + player.height ^ 2) / 12
 player.angularAcceleration = 0
 player.angularVelocity = 0
@@ -20,7 +20,7 @@ player.fLongitudinal = Vector.new(0,0)
 player.forceNet = Vector.new(0,0)
 player.forceFriction = Vector.new(0,0)
 player.forceCentripetal = Vector.new(0,0)
-player.forceNormal = player.mass * 9.81 * .2
+player.forceNormal = player.mass * 9.81 * .1
 player.downforce = player.mass * 9.81
 player.forceDrag = Vector.new(0,0)
 player.lateralOffset = 1
@@ -106,7 +106,7 @@ function player:updateDragForce()
     self.forceDrag = fdrag
 end
 
-function player:updateLateralForce()
+function player:updateLateralForce()--wigggle cart ahh physics
     player:slipAngle()
 
     local frontLat = Vector.new(getSlipForceCurve(self.frontSlip,player.downforce * 0.5),self.direction + self.steerAngle - math.pi/2 )--* sign(self.frontSlip)

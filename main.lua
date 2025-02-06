@@ -1,6 +1,6 @@
 w = 1000
 h = 750
-scale = 5  --pixels per meter
+scale = 10  --pixels per meter
 require ("constants")
 require ("player")
 require ("draw")
@@ -8,11 +8,12 @@ require ("draw")
 
 
 
+
 function mapKeystoAcceleration()
     if keys.up then
-        player.accel = 8
+        player.accel = 3
     elseif keys.down then 
-        player.accel = -8
+        player.accel = -3
     else
         player.accel = 0
     end
@@ -35,8 +36,8 @@ function love.load()
     maxSteerAngle = math.pi * 0.33
     pedal.maxWidth = (pedal.w - 10) / 2
 
-    tireWidth = 10
-    tireHeight = 20
+    tireWidth = scale/2
+    tireHeight = scale
 end
 
 function love.update(dt) 
@@ -60,17 +61,20 @@ function love.draw()
         love.graphics.rotate(player.direction)
         --love.graphics.rectangle("fill", - player.width/2, -player.height, player.width, player.height)
         
-        love.graphics.rectangle("fill", -player.height/2, -player.width/2, player.height, player.width)
+        love.graphics.rectangle("fill", 0, -player.width/2, player.height, player.width)
         
         love.graphics.setColor(love.math.colorFromBytes(227, 252, 236))
+        love.graphics.rectangle("fill", -tireHeight/2, -player.width/2 - tireWidth/2, tireHeight, tireWidth)
+        love.graphics.rectangle("fill", -tireHeight/2, player.width/2 - tireWidth/2, tireHeight, tireWidth)
+        --love.graphics.rectangle("fill", 0, -player.width/2, player.height, player.width)
 
         love.graphics.push()--left tire
-            love.graphics.translate(player.height/2, - player.width/2)
+            love.graphics.translate(player.height, - player.width/2)
             love.graphics.rotate(player.steerAngle)
             love.graphics.rectangle("fill",-tireHeight/2,-tireWidth/2,tireHeight,tireWidth)
         love.graphics.pop()
         love.graphics.push()--right tire
-            love.graphics.translate(player.height/2,player.width/2)
+            love.graphics.translate(player.height,player.width/2)
             love.graphics.rotate(player.steerAngle)
             love.graphics.rectangle("fill",-tireHeight/2,- tireWidth/2,tireHeight,tireWidth)
         love.graphics.pop()
