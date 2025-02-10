@@ -1,6 +1,6 @@
 -- require "luarocks.loader"
--- run tests in debugger
--- Lua test.lua 
+-- run tests in terminal with: Lua test.lua 
+-- for more verbose output use: Lua test.lua -v
 luaunit = require('luaunit')
 require ("constants")
 
