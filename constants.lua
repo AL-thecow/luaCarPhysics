@@ -119,7 +119,7 @@
     local b = Vector.new(a.m,a.d)
     if b.d < 0 then
         b.d = b.d - math.pi * 2 * i
-        b.d = math.pi * 2 + b.d
+        --b.d = math.pi * 2 + b.d
     else 
         b.d = b.d - math.pi * 2 * i
     end

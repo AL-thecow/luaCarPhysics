@@ -1,5 +1,5 @@
-w = 1000
-h = 750
+w = 1280
+h = 720
 scale = 10  --pixels per meter
 require ("constants")
 require ("player")
@@ -11,9 +11,9 @@ require ("draw")
 
 function mapKeystoAcceleration()
     if keys.up then
-        player.accel = 3
+        player.accel = 10
     elseif keys.down then 
-        player.accel = -3
+        player.accel = -10
     else
         player.accel = 0
     end
@@ -27,8 +27,8 @@ function love.load()
     keys = {}
 
     pedal = {}
-    pedal.x = 500
-    pedal.y = 700
+    pedal.x = 640
+    pedal.y = 680
     pedal.w = 180
     pedal.h = 40
     pedal.innerWidth = 0

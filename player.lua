@@ -54,7 +54,7 @@ function player:updatePosition(dt)
 end
 
 function player:updateNetForce() 
-    self.forceNet = self.fLongitudinal + self.fLateral + self.forceFriction --+ self.forceCentripetal --+ self.fLateral
+    self.forceNet = self.fLongitudinal + self.fLateral --+ self.forceFriction --+ self.forceCentripetal --+ self.fLateral
     if keys.left then
     self.forceNet = self.fLongitudinal 
     end

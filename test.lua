@@ -30,7 +30,7 @@ TestVector = {}
         luaunit.assertEquals(testNormal.d,math.pi/3)
     end
     function TestVector:testVectorNormalizeNegativeRadians()
-        local v = Vector.new(5,-5 * math.pi/3)
+        local v = Vector.new(5,-11 * math.pi/3)
         local testNormal = normalize(v)
         luaunit.assertEquals(testNormal.m,v.m)
         luaunit.assertEquals(testNormal.d,math.pi/3)
