@@ -19,6 +19,7 @@ function printStats(x,y)
     love.graphics.print("            Lateral force:", x, y + 80); love.graphics.print(player.fLateral.m,x + 130,y + 80)
     love.graphics.print("Angular acceleration:", x, y + 100); love.graphics.print(player.angularAcceleration * 180 / math.pi,x + 130,y + 100)
     love.graphics.print("               Drag force:", x, y + 120); love.graphics.print(player.forceDrag.m,x + 130,y + 120)
+    love.graphics.print("                    Torque:", x, y + 140); love.graphics.print(player.torque,x + 130,y + 140)
     local i = player.frontSlip / player.backSlip
     if i > 1 then
         love.graphics.print("understeer",550,640)

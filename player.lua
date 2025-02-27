@@ -30,8 +30,6 @@ player.frontSlip = 0
 player.backSlip = 0
 
 function player:updatePlayer(dt)
-
-    --local magnitudeOfVelocity = math.sqrt(player.v.x * player.v.x + player.v.y * player.v.y)
     
     mapMouseToSteerAngle()
     mapKeystoAcceleration()
@@ -88,13 +86,6 @@ function player:updateCentripetalForce(dt)
         --return 0
     end
     local radiusFront = self.wheelbase / math.sin(self.steerAngle)
-    --[[local hB = self.wheelbase / 2
-    local theta = math.pi/2 - abs(self.steerAngle)
-    local inputToSqrt = hB ^ 2 + radiusFront ^ 2 - 2 * hB * radiusFront * math.cos(theta)
-    if inputToSqrt < 0 then
-        error("negative in sqrt")
-    end
-    local realRadius = math.sqrt(inputToSqrt)]]
     local magnitude = self.mass * self.v.m * self.v.m / radiusFront
     self.aV = self.v.m / radiusFront
     self.forceCentripetal.m = magnitude

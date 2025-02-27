@@ -11,9 +11,9 @@ require ("draw")
 
 function mapKeystoAcceleration()
     if keys.up then
-        player.accel = 10
+        player.accel = 6
     elseif keys.down then 
-        player.accel = -10
+        player.accel = -6
     else
         player.accel = 0
     end
